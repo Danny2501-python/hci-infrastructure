@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: spark-iceberg
+  name: spark-iceberg
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spark-iceberg
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: spark-iceberg
+    spec:
+      containers:
+        - env:
+            - name: AWS_ACCESS_KEY_ID
+              value: admin
+            - name: AWS_REGION
+              value: us-east-1
+            - name: AWS_SECRET_ACCESS_KEY
+              value: password
+          image: 111050/spark-iceberg:latest
+          imagePullPolicy: IfNotPresent
+          name: spark-iceberg
+          ports:
+            - containerPort: 8888
+              name: jupyter
+              protocol: TCP
+            - containerPort: 8080
+              name: spark-ui
+              protocol: TCP
+            - containerPort: 10000
+              name: thrift
+              protocol: TCP
+            - containerPort: 10001
+              name: blockmgr
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "1Gi"
+            limits:
+              cpu: "3000m"
+              memory: "3Gi"
+          volumeMounts:
+            - mountPath: /home/iceberg/warehouse
+              name: spark-iceberg-claim0
+            - mountPath: /home/iceberg/notebooks/notebooks
+              name: spark-iceberg-claim1
+            - name: spark-config-volume
+              mountPath: /opt/spark/conf/spark-defaults.conf
+              subPath: spark-defaults.conf
+      restartPolicy: Always
+      volumes:
+        - name: spark-iceberg-claim0
+          persistentVolumeClaim:
+            claimName: spark-iceberg-claim0
+        - name: spark-iceberg-claim1
+          persistentVolumeClaim:
+            claimName: spark-iceberg-claim1
+        - name: spark-config-volume
+          configMap:
+            name: spark-config
+status: {}

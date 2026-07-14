@@ -1,0 +1,55 @@
+{{- range .Values.catalogs }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: iceberg-rest
+    catalog: {{ .name }}
+  name: iceberg-rest-{{ .name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  replicas: {{ $.Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: iceberg-rest
+      catalog: {{ .name }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: iceberg-rest
+        catalog: {{ .name }}
+    spec:
+      containers:
+        - env:
+            - name: AWS_ACCESS_KEY_ID
+              value: {{ $.Values.common.s3.accessKeyId }}
+            - name: AWS_REGION
+              value: {{ $.Values.common.s3.region }}
+            - name: AWS_SECRET_ACCESS_KEY
+              value: {{ $.Values.common.s3.secretAccessKey }}
+            - name: CATALOG_CATALOG__IMPL
+              value: org.apache.iceberg.jdbc.JdbcCatalog
+            - name: CATALOG_URI
+              value: jdbc:postgresql://{{ $.Values.common.database.host }}:{{ $.Values.common.database.port }}/{{ .databaseName }}
+            - name: CATALOG_JDBC_USER
+              value: {{ $.Values.common.database.user }}
+            - name: CATALOG_JDBC_PASSWORD
+              value: {{ $.Values.common.database.password }}
+            - name: CATALOG_IO__IMPL
+              value: org.apache.iceberg.aws.s3.S3FileIO
+            - name: CATALOG_S3_ENDPOINT
+              value: {{ $.Values.common.s3.endpoint }}
+            - name: CATALOG_WAREHOUSE
+              value: {{ .warehouse }}
+          image: {{ $.Values.common.image }}
+          imagePullPolicy: IfNotPresent
+          name: iceberg-rest
+          ports:
+            - containerPort: {{ $.Values.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml $.Values.common.resources | nindent 12 }}
+      restartPolicy: Always
+{{- end }}

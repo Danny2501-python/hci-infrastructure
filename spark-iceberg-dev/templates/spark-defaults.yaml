@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spark-config
+  namespace: {{ .Release.Namespace }}
+data:
+  spark-defaults.conf: |
+    # Iceberg Spark Extensions
+    spark.sql.extensions                   org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+    
+{{- range .Values.iceberg.catalogs }}
+    # Catalog: {{ .name }}
+    spark.sql.catalog.{{ .name }}                      org.apache.iceberg.spark.SparkCatalog
+    spark.sql.catalog.{{ .name }}.type                 rest
+    spark.sql.catalog.{{ .name }}.uri                  {{ .uri }}
+    spark.sql.catalog.{{ .name }}.io-impl              org.apache.iceberg.aws.s3.S3FileIO
+    spark.sql.catalog.{{ .name }}.warehouse            {{ .warehouse }}
+    spark.sql.catalog.{{ .name }}.s3.endpoint          {{ $.Values.iceberg.s3.endpoint }}
+    spark.sql.catalog.{{ .name }}.s3.path-style-access {{ $.Values.iceberg.s3.pathStyleAccess }}
+{{- end }}
+    
+    # Default Catalog
+    spark.sql.defaultCatalog               {{ .Values.iceberg.defaultCatalog }}

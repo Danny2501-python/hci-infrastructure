@@ -1,0 +1,34 @@
+# MetalLB Lightweight Configuration
+# Optimized for L2 mode only
+
+# Disable FRR (BGP) - not needed for L2 mode
+speaker:
+  frr:
+    enabled: false
+  
+  # Reduce resources
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# Controller resources
+controller:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# Disable Prometheus monitoring (optional)
+prometheus:
+  scrapeAnnotations: false
+  podMonitor:
+    enabled: false
+  serviceMonitor:
+    enabled: false

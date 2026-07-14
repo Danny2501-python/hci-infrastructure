@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jupyter-nfs-pv
+spec:
+  capacity:
+    storage: 50Gi # Chinh theo nhu cau
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany # NFS cho phep nhieu pod cung doc/ghi
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: /srv/nfs_share/jupyter  # Duong dan tren NFS Server
+    server: 10.10.10.245 # THAY THE IP CUA NFS SERVER O DAY
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jupyter-nfs-pvc
+  namespace: jupyter-notebook
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+  volumeName: jupyter-nfs-pv

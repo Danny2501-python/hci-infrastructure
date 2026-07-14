@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pod-template
+data:
+  pod_template.yaml: |
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: airflow-worker
+      labels:
+        app: airflow
+    spec:
+      serviceAccount: airflow
+      restartPolicy: Never
+      containers:
+        - name: base
+          image: 111050/airflow:2.9.1
+          volumeMounts:
+            - name: airflow-config
+              mountPath: /opt/airflow/airflow.cfg
+              subPath: airflow.cfg
+            - name: airflow-dags
+              mountPath: /opt/airflow/dags
+            - name: pod-template
+              mountPath: /opt/airflow/template/pod_template.yaml
+              subPath: pod_template.yaml
+          env:
+          - name: AIRFLOW_IS_K8S_EXECUTOR_POD
+            value: "True"
+          - name: AIRFLOW_CONN_MINIO_LOGS_CONN
+            value: "aws://admin:password@?endpoint_url=http%3A%2F%2F10.152.183.65%3A9000"
+      volumes:
+        - name: airflow-config
+          configMap:
+            name: airflow-config
+        - name: airflow-dags
+          persistentVolumeClaim:
+            claimName: airflow-dags-pvc
+        - name: pod-template
+          configMap:
+            name: pod-template

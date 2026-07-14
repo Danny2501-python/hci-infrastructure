@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trino-worker
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: trino
+    component: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trino
+      component: worker
+  template:
+    metadata:
+      labels:
+        app: trino
+        component: worker
+    spec:
+      containers:
+      - name: trino
+        image: 111050/trino:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: "2000m"
+            memory: "3Gi"
+          limits:
+            cpu: "4000m"
+            memory: "6Gi"
+        volumeMounts:
+        {{- range .Values.iceberg.catalogs }}
+        - name: catalog-{{ .name }}
+          mountPath: "/etc/trino/catalog/{{ .name }}.properties"
+          subPath: "{{ .name }}.properties"
+        {{- end }}
+        - name: config-volume
+          mountPath: /etc/trino/config.properties
+          subPath: config.properties
+        - name: config-volume
+          mountPath: /etc/trino/jvm.config
+          subPath: jvm.config
+      volumes:
+      {{- range .Values.iceberg.catalogs }}
+      - name: catalog-{{ .name }}
+        configMap:
+          name: trino-catalog-{{ .name }}
+      {{- end }}
+      - name: config-volume
+        configMap:
+          name: trino-worker-config

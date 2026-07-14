@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow-webserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airflow
+      component: webserver
+  template:
+    metadata:
+      labels:
+        app: airflow
+        component: webserver
+    spec:
+      initContainers:
+        - name: fix-permissions
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "chown -R 50000:0 /opt/airflow/dags && chmod -R 775 /opt/airflow/dags"]
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: airflow-dags
+              mountPath: /opt/airflow/dags
+        - name: init-db
+          image: 111050/airflow:2.9.1
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - -c
+            - |
+              echo "Waiting for DB connection..."
+              until airflow db check; do
+                echo "DB not ready, waiting..."
+                sleep 5
+              done
+              echo "Initializing Airflow Database..."
+              airflow db init
+              echo "Creating Admin User..."
+              airflow users create --role Admin --username admin --email admin --firstname admin --lastname admin --password admin || true
+              echo "Database initialization complete."
+          volumeMounts:
+            - name: airflow-config
+              mountPath: /opt/airflow/airflow.cfg
+              subPath: airflow.cfg
+            - name: airflow-dags
+              mountPath: /opt/airflow/dags
+      containers:
+        - name: webserver
+          image: 111050/airflow:2.9.1
+          imagePullPolicy: IfNotPresent
+          command: ["airflow", "webserver"]
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "2Gi"
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"
+          env:
+            - name: AIRFLOW_CONN_MINIO_LOGS_CONN
+              value: "aws://admin:password@?endpoint_url=http%3A%2F%2F10.152.183.65%3A9000"
+          volumeMounts:
+            - name: airflow-config
+              mountPath: /opt/airflow/airflow.cfg
+              subPath: airflow.cfg
+            - name: airflow-dags
+              mountPath: /opt/airflow/dags
+            - name: pod-template
+              mountPath: /opt/airflow/template/pod_template.yaml
+              subPath: pod_template.yaml
+      volumes:
+        - name: airflow-config
+          configMap:
+            name: airflow-config
+        - name: airflow-dags
+          persistentVolumeClaim:
+            claimName: airflow-dags-pvc
+        - name: pod-template
+          configMap:
+            name: pod-template

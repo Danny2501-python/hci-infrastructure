@@ -1,0 +1,77 @@
+{{- range .Values.iceberg.catalogs }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trino-catalog-{{ .name }}
+  namespace: {{ $.Release.Namespace }}
+data:
+  "{{ .name }}.properties": |
+    connector.name=iceberg
+    iceberg.catalog.type=rest
+    iceberg.rest-catalog.uri={{ .uri }}
+    iceberg.rest-catalog.warehouse={{ .warehouse }}
+    iceberg.file-format=PARQUET
+
+    fs.native-s3.enabled=true
+    s3.endpoint={{ $.Values.iceberg.s3.endpoint }}
+    s3.region={{ $.Values.iceberg.s3.region }}
+    s3.path-style-access=true
+    s3.aws-access-key={{ $.Values.iceberg.s3.accessKey }}
+    s3.aws-secret-key={{ $.Values.iceberg.s3.secretKey }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trino-coordinator-config
+  namespace: {{ .Release.Namespace }}
+data:
+  config.properties: |
+    coordinator=true
+    node-scheduler.include-coordinator=false
+    http-server.http.port=8080
+    discovery.uri=http://localhost:8080
+    http-server.process-forwarded=true
+    query.max-memory-per-node=1.5GB
+    query.max-memory=2GB
+    query.max-total-memory=3GB
+  jvm.config: |
+    -server
+    -Xmx2560M
+    -Xms2560M
+    -XX:+UseG1GC
+    -XX:G1HeapRegionSize=32M
+    -XX:+UseGCOverheadLimit
+    -XX:+ExplicitGCInvokesConcurrent
+    -XX:+HeapDumpOnOutOfMemoryError
+    -XX:+ExitOnOutOfMemoryError
+    -Djdk.attach.allowAttachSelf=true
+    -Djava.net.preferIPv4Stack=true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trino-worker-config
+  namespace: {{ .Release.Namespace }}
+data:
+  config.properties: |
+    coordinator=false
+    http-server.http.port=8080
+    discovery.uri=http://trino-service:8080
+    http-server.process-forwarded=true
+    query.max-memory-per-node=1.5GB
+    query.max-memory=2GB
+    query.max-total-memory=3GB
+  jvm.config: |
+    -server
+    -Xmx2560M
+    -Xms2560M
+    -XX:+UseG1GC
+    -XX:G1HeapRegionSize=32M
+    -XX:+UseGCOverheadLimit
+    -XX:+ExplicitGCInvokesConcurrent
+    -XX:+HeapDumpOnOutOfMemoryError
+    -XX:+ExitOnOutOfMemoryError
+    -Djdk.attach.allowAttachSelf=true
+    -Djava.net.preferIPv4Stack=true

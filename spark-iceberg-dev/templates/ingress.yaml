@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: spark-iceberg-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: jupyter.lakehouse.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: spark-iceberg
+            port:
+              number: 8888
+  - host: sparkui.lakehouse.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: spark-iceberg
+            port:
+              number: 8080

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  creationTimestamp: null
+  labels:
+    app: spark-iceberg
+  name: spark-iceberg-claim1
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeName: spark-iceberg-notebooks-pv
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: ""
+status: {}

@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow-scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airflow
+      component: scheduler
+  template:
+    metadata:
+      labels:
+        app: airflow
+        component: scheduler
+    spec:
+      serviceAccountName: airflow
+      containers:
+        - name: scheduler
+          image: 111050/airflow:2.9.1
+          imagePullPolicy: IfNotPresent
+          command: ["airflow", "scheduler"]
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "2Gi"
+            limits:
+              cpu: "3000m"
+              memory: "2560Mi"
+          env:
+            - name: AIRFLOW_CONN_MINIO_LOGS_CONN
+              value: "aws://admin:password@?endpoint_url=http%3A%2F%2F10.152.183.65%3A9000"
+          volumeMounts:
+            - name: airflow-config
+              mountPath: /opt/airflow/airflow.cfg
+              subPath: airflow.cfg
+            - name: airflow-dags
+              mountPath: /opt/airflow/dags
+            - name: pod-template
+              mountPath: /opt/airflow/template/pod_template.yaml
+              subPath: pod_template.yaml
+      volumes:
+        - name: airflow-config
+          configMap:
+            name: airflow-config
+        - name: airflow-dags
+          persistentVolumeClaim:
+            claimName: airflow-dags-pvc
+        - name: pod-template
+          configMap:
+            name: pod-template

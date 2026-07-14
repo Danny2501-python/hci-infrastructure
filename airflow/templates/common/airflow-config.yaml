@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airflow-config
+data:
+  airflow.cfg: |
+    [core]
+    load_examples = False
+    executor = KubernetesExecutor
+    dags_folder = /opt/airflow/dags
+    default_timezone = Asia/Ho_Chi_Minh
+    dags_are_paused_at_creation = True
+    parallelism = 16
+    max_active_tasks_per_dag = 4
+
+    [database]
+    sql_alchemy_conn = postgresql+psycopg2://airflow:ANHpro12345@10.152.183.183:5432/airflow
+    sql_alchemy_pool_size = 10
+    sql_alchemy_max_overflow = 20
+
+    [webserver]
+    web_server_host = 0.0.0.0
+    web_server_port = 8080
+    web_server_master_timeout = 600
+    web_server_worker_timeout = 600
+    worker_refresh_interval = 0
+
+    [logging]
+    remote_logging = True
+    remote_base_log_folder = s3://airflow-logs
+    remote_log_conn_id = minio_logs_conn
+    scheduler_logging_level = INFO
+    base_log_folder = /opt/airflow/logs
+
+    [kubernetes_executor]
+    namespace = default
+    pod_template_file = /opt/airflow/template/pod_template.yaml
+    delete_worker_pods = True
+    task_queued_timeout = 300
+
+    [scheduler]
+    scheduler_heartbeat_sec = 5.0
+    parsing_processes = 2

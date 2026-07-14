@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea-runner
+  labels:
+    app: gitea-runner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitea-runner
+  template:
+    metadata:
+      labels:
+        app: gitea-runner
+    spec:
+      containers:
+        - name: runner
+          image: gitea/act_runner:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: GITEA_INSTANCE_URL
+              value: "http://gitea:3000"
+            - name: GITEA_RUNNER_REGISTRATION_TOKEN
+              value: "FHTLcyb2RfdVdvfdzzth5u7eGzhv5WE7Dv76LiW4" # <--- Sẽ thay token vào đây
+            - name: GITEA_RUNNER_NAME
+              value: "k8s-nfs-runner"
+            - name: GITEA_RUNNER_LABELS
+              value: "ubuntu-latest:host" # Dùng label này để chạy trực tiếp trên pod
+          volumeMounts:
+            - name: runner-data
+              mountPath: /data
+            - name: nfs-share
+              mountPath: /mnt/nfs_share
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "apk update && apk add git nodejs rsync"]
+      volumes:
+        - name: runner-data
+          nfs:
+            server: 10.10.10.245
+            path: /srv/nfs_share/runner_data
+        - name: nfs-share
+          nfs:
+            server: 10.10.10.245
+            path: /srv/nfs_share
