@@ -1,0 +1,21 @@
+{{- if and .Values.kafkaUi.enabled .Values.kafkaUi.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-kafka-ui-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: {{ .Values.kafkaUi.ingress.className | default "nginx" }}
+  rules:
+  - host: {{ .Values.kafkaUi.ingress.host | default "kafka-ui.lakehouse.com" }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Release.Name }}-kafka-ui
+            port:
+              number: {{ .Values.kafkaUi.service.port }}
+{{- end }}

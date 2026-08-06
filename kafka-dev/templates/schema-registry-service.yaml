@@ -1,0 +1,21 @@
+{{- if .Values.schemaRegistry.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-schema-registry
+  labels:
+    app.kubernetes.io/name: schema-registry
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  type: {{ .Values.schemaRegistry.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.schemaRegistry.service.port }}
+      targetPort: 8081
+      {{- if and (eq .Values.schemaRegistry.service.type "NodePort") .Values.schemaRegistry.service.nodePort }}
+      nodePort: {{ .Values.schemaRegistry.service.nodePort }}
+      {{- end }}
+  selector:
+    app.kubernetes.io/name: schema-registry
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

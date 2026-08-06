@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  kafka-controller:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: lakehouse-kafka-controller
+    ports:
+      - "9093:9093"
+    environment:
+      - KAFKA_NODE_ID=1
+      - KAFKA_PROCESS_ROLES=controller
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka-controller:9093
+      - KAFKA_LISTENERS=CONTROLLER://0.0.0.0:9093
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka_controller_data:/var/lib/kafka/data
+    networks:
+      - lakehouse-net
+
+  kafka-broker:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: lakehouse-kafka-broker
+    ports:
+      - "9092:9092"
+    depends_on:
+      - kafka-controller
+    environment:
+      - KAFKA_NODE_ID=2
+      - KAFKA_PROCESS_ROLES=broker
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka-controller:9093
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092,EXTERNAL://0.0.0.0:9094
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-broker:9092,EXTERNAL://localhost:9092
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka_broker_data:/var/lib/kafka/data
+    networks:
+      - lakehouse-net
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.6.0
+    container_name: lakehouse-schema-registry
+    ports:
+      - "8081:8081"
+    depends_on:
+      - kafka-broker
+    environment:
+      - SCHEMA_REGISTRY_HOST_NAME=schema-registry
+      - SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=PLAINTEXT://kafka-broker:9092
+      - SCHEMA_REGISTRY_LISTENERS=http://0.0.0.0:8081
+    networks:
+      - lakehouse-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: lakehouse-kafka-ui
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka-broker
+      - schema-registry
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=kraft-lakehouse-cluster
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka-broker:9092
+      - KAFKA_CLUSTERS_0_SCHEMAREGISTRY=http://schema-registry:8081
+    networks:
+      - lakehouse-net
+
+volumes:
+  kafka_controller_data:
+  kafka_broker_data:
+
+networks:
+  lakehouse-net:
+    name: lakehouse-net
+    driver: bridge

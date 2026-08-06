@@ -1,0 +1,16 @@
+{{- if .Values.broker.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-broker-pvc
+  labels:
+    app.kubernetes.io/name: kafka-broker
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.broker.persistence.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.broker.persistence.size }}
+{{- end }}

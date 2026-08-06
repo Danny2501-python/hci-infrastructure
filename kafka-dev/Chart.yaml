@@ -1,0 +1,6 @@
+apiVersion: v2
+name: kafka-dev
+description: Helm Chart for Apache Kafka in KRaft mode with Confluent Schema Registry and Kafka UI
+type: application
+version: 0.1.0
+appVersion: "3.7.0"

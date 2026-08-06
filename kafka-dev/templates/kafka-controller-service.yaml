@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-controller
+  labels:
+    app.kubernetes.io/name: kafka-controller
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: controller
+      port: {{ .Values.controller.service.port }}
+      targetPort: 9093
+  selector:
+    app.kubernetes.io/name: kafka-controller
+    app.kubernetes.io/instance: {{ .Release.Name }}

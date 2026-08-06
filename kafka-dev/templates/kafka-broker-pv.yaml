@@ -1,0 +1,23 @@
+{{- if .Values.broker.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: kafka-broker-local-pv
+spec:
+  capacity:
+    storage: {{ .Values.broker.persistence.size }}
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .Values.broker.persistence.storageClass }}
+  local:
+    path: {{ .Values.broker.persistence.path }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - k8s1
+{{- end }}

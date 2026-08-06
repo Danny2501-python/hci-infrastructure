@@ -1,0 +1,21 @@
+{{- if .Values.kafkaUi.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-kafka-ui
+  labels:
+    app.kubernetes.io/name: kafka-ui
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  type: {{ .Values.kafkaUi.service.type }}
+  ports:
+    - name: http
+      port: {{ .Values.kafkaUi.service.port }}
+      targetPort: 8080
+      {{- if and (eq .Values.kafkaUi.service.type "NodePort") .Values.kafkaUi.service.nodePort }}
+      nodePort: {{ .Values.kafkaUi.service.nodePort }}
+      {{- end }}
+  selector:
+    app.kubernetes.io/name: kafka-ui
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
